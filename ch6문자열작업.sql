@@ -66,3 +66,277 @@ select
         sal,
         replace(sal,0,'') stripped2
    from emp
+6.6 문자열의 영숫자 여부 확인하기
+drop view V;
+create view V as
+select ename as data
+  from emp
+ where deptno=10
+ union all
+select ename||', $'|| cast(sal as char(4)) ||'.00' as data
+  from emp
+ where deptno=20
+ union all
+select ename|| cast(deptno as char(4)) as data
+  from emp
+ where deptno=30
+
+--------------------------------------------------------------------
+<DB2>
+ select data
+   from V
+  where translate(lower(data),
+                  repeat('a',36),
+                  '0123456789abcdefghijklmnopqrstuvwxyz') =
+                  repeat('a',length(data))
+
+<MySQL>
+create view V as
+select ename as data
+  from emp
+ where deptno=10
+ union all
+select concat(ename,', $',sal,'.00') as data
+  from emp
+ where deptno=20
+ union all
+select concat(ename,deptno) as data
+  from emp
+ where deptno=30
+--------------------------------------------------------------------
+ select data
+   from V
+  where data regexp '[^0-9a-zA-Z]' = 0
+
+<Oracle과 PostgreSQL>
+ select data
+   from V
+  where translate(lower(data),
+                  '0123456789abcdefghijklmnopqrstuvwxyz',
+                  rpad('a',36,'a')) = rpad('a',length(data),'a')
+
+<SQL Server>
+ select data
+   from V
+  where translate(lower(data),
+                  '0123456789abcdefghijklmnopqrstuvwxyz',
+                  replicate('a',36)) = replicate('a',len(data))
+--------------------------------------------------------------------
+<DB2, Oracle, PostgreSQL, SQL Server>
+select data, translate(lower(data),
+                  '0123456789abcdefghijklmnopqrstuvwxyz',
+                   rpad('a',36,'a'))
+  from V
+--------------------------------------------------------------------
+select data, translate(lower(data),
+                  '0123456789abcdefghijklmnopqrstuvwxyz',
+                   rpad('a',36,'a')) translated,
+        rpad('a',length(data),'a') fixed
+  from V
+
+6.7. 이름에서 이니셜 추출하기
+<DB2>
+ select replace(
+        replace(
+        translate(replace('Stewie Griffin', '.', ''),
+                  repeat('#',26),
+                  'abcdefghijklmnopqrstuvwxyz'),
+                   '#','' ), ' ','.' )
+                  ||'.'
+   from t1
+
+<MySQL>
+ select case
+           when cnt = 2 then
+             trim(trailing '.' from
+                  concat_ws('.',
+                   substr(substring_index(name,' ',1),1,1),
+                   substr(name,
+                          length(substring_index(name,' ',1))+2,1),
+                   substr(substring_index(name,' ',-1),1,1),
+                   '.'))
+          else
+            trim(trailing '.' from
+                 concat_ws('.',
+                  substr(substring_index(name,' ',1),1,1),
+                  substr(substring_index(name,' ',-1),1,1)
+                  ))
+          end as initials
+   from (
+ select name,length(name)-length(replace(name,' ','')) as cnt
+   from (
+ select replace('Stewie Griffin','.','') as name from t1
+        )y
+        )x
+        
+select concat_ws('.',
+                  substr(substring_index(name,' ',1),1,1),
+                  substr(substring_index(name,' ',-1),1,1),
+                 '.' ) a
+from  (select  'Stewie Griffin' as name from t1) x;
+
+<Oracle과 PostgreSQL>
+ select replace(
+        replace(
+        translate(replace('Stewie Griffin', '.', ''),
+                  'abcdefghijklmnopqrstuvwxyz',
+                  rpad('#',26,'#') ), '#','' ),' ','.' ) ||'.'
+   from t1
+
+
+
+
+<SQL Server>
+ select replace(
+        replace(
+        translate(replace('Stewie Griffin', '.', ''),
+                  'abcdefghijklmnopqrstuvwxyz',
+                  replicate('#',26) ), '#','' ),' ','.' ) + '.'
+   from t1
+--------------------------------------------------------------------
+<DB2>
+select translate(replace('Stewie Griffin', '.', ''),
+                 repeat('#',26),
+                 'abcdefghijklmnopqrstuvwxyz')
+  from t1
+--------------------------------------------------------------------
+select replace(
+       translate(replace('Stewie Griffin', '.', ''),
+                  repeat('#',26),
+                  'abcdefghijklmnopqrstuvwxyz'),'#','')
+  from t1
+--------------------------------------------------------------------
+select replace(
+       replace(
+       translate(replace('Stewie Griffin', '.', ''),
+                 repeat('#',26),
+                'abcdefghijklmnopqrstuvwxyz'),'#',''),' ','.') || '.'
+  from t1
+
+<Oracle과 PostgreSQL>
+select translate(replace('Stewie Griffin','.',''),
+                 'abcdefghijklmnopqrstuvwxyz',
+                 rpad('#',26,'#'))
+  from t1
+--------------------------------------------------------------------
+select replace(
+       translate(replace('Stewie Griffin','.',''),
+                 'abcdefghijklmnopqrstuvwxyz',
+                  rpad('#',26,'#')),'#','')
+  from t1
+--------------------------------------------------------------------
+select replace(
+       replace(
+     translate(replace('Stewie Griffin','.',''),
+               'abcdefghijklmnopqrstuvwxyz',
+               rpad('#',26,'#') ),'#',''),' ','.') || '.'
+  from t1
+
+
+MySQL
+select substr(substring_index(name, ' ',1),1,1) as a,
+       substr(substring_index(name,' ',-1),1,1) as b
+  from (select 'Stewie Griffin' as name from t1) x
+--------------------------------------------------------------------
+select concat_ws('.',
+                 substr(substring_index(name, ' ',1),1,1),
+                 substr(substring_index(name,' ',-1),1,1),
+                 '.' ) a
+  from (select 'Stewie Griffin' as name from t1) x
+
+6.8 문자열 일부를 정렬하기
+<DB2, Oracle, MySQL, PostgreSQL>
+ select ename
+   from emp
+  order by substr(ename,length(ename)-1,2);
+
+<SQL Server>
+ select ename
+   from emp
+  order by substring(ename,len(ename)-1,2)
+
+6.9 문자열의 숫자로 정렬하기
+create view V as
+select e.ename ||' '||
+        cast(e.empno as char(4))||' '||
+        d.dname as data
+  from emp e, dept d
+ where e.deptno=d.deptno
+--------------------------------------------------------------------
+<DB2>
+ select data
+   from V
+  order by
+         cast(
+      replace(
+    translate(data,repeat('#',length(data)),
+      replace(
+    translate(data,'##########','0123456789'),
+             '#','')),'#','') as integer)
+
+<Oracle>
+ select data
+   from V
+  order by
+         to_number(
+           replace(
+         translate(data,
+           replace(
+         translate(data,'0123456789','##########'),
+                  '#'),rpad('#',20,'#')),'#'))
+
+<PostgreSQL>
+ select data
+   from V
+  order by
+         cast(
+      replace(
+    translate(data,
+      replace(
+    translate(data,'0123456789','##########'),
+             '#',''),rpad('#',20,'#')),'#','') as integer);
+
+--------------------------------------------------------------------
+select data,
+       translate(data,'0123456789','##########') as tmp
+  from V;
+--------------------------------------------------------------------
+select data,
+replace(
+translate(data,'0123456789','##########'),'#') as tmp
+  from V
+--------------------------------------------------------------------
+select data, translate(data,
+             replace(
+             translate(data,'0123456789','##########'),
+             '#'),
+             rpad('#',length(data),'#')) as tmp
+  from V
+--------------------------------------------------------------------
+select data, replace(
+             translate(data,
+             replace(
+           translate(data,'0123456789','##########'),
+                     '#'),
+                     rpad('#',length(data),'#')),'#') as tmp
+  from V
+--------------------------------------------------------------------
+select data, to_number(
+              replace(
+             translate(data,
+             replace(
+       translate(data,'0123456789','##########'),
+                 '#'),
+                 rpad('#',length(data),'#')),'#')) as tmp
+  from V
+--------------------------------------------------------------------
+select data
+  from V
+ order by
+        to_number(
+          replace(
+        translate( data,
+          replace(
+        translate( data,'0123456789','##########'),
+                  '#'),rpad('#',length(data),'#')),'#'))
+
