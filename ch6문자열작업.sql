@@ -339,4 +339,158 @@ select data
           replace(
         translate( data,'0123456789','##########'),
                   '#'),rpad('#',length(data),'#')),'#'))
+6.10 테이블 행으로 구분된 목록 만들기
+<DB2>
+ select deptno,
+        list_agg(ename ',') within GROUP(Order by 0) as emps
+   from emp
+  group by deptno;
+
+<MySQL>
+ select deptno,
+        group_concat(ename order by empno separator, ',') as emps
+   from emp
+  group by deptno;
+
+<Oracle>
+ select deptno,
+         ltrim(sys_connect_by_path(ename,','),',') emps
+    from (
+  select deptno,
+         ename,
+         row_number() over
+                  (partition by deptno order by empno) rn,
+         count(*) over
+                  (partition by deptno) cnt
+   from emp
+        )
+  where level = cnt
+  start with rn = 1
+ connect by prior deptno = deptno and prior rn = rn-1
+
+<PostgreSQL과 SQL Server>
+ select deptno,
+        string_agg(ename order by empno separator, ',') as emps
+   from emp
+  group by deptno
+--------------------------------------------------------------------
+<Oracle>
+select deptno,
+        ename,
+        row_number() over
+                  (partition by deptno order by empno) rn,
+        count(*) over (partition by deptno) cnt
+  from emp
+
+6.11 구분된 데이터를 다중값 IN-목록으로 변환하기
+select ename,sal,deptno
+  from emp
+ where empno in ( '7654,7698,7782,7788' )
+--------------------------------------------------------------------
+<DB2>
+ select empno,ename,sal,deptno
+    from emp
+   where empno in (
+  select cast(substr(c,2,locate(',',c,2)-2) as integer) empno
+    from (
+  select substr(csv.emps,cast(iter.pos as integer)) as c
+    from (select ','||'7654,7698,7782,7788'||',' emps
+           from t1) csv,
+         (select id as pos
+           from t100 ) iter
+  where iter.pos <= length(csv.emps)
+        ) x
+  where length(c) > 1
+    and substr(c,1,1) = ','
+        )
+
+<MySQL>
+  select empno, ename, sal, deptno
+    from emp
+   where empno in
+         (
+  select substring_index(
+         substring_index(list.vals,',',iter.pos),',',-1) empno
+    from (select id pos from t10) as iter,
+         (select '7654,7698,7782,7788' as vals
+            from t1) list
+   where iter.pos <=
+        (length(list.vals)-length(replace(list.vals,',','')))+1
+        );
+
+<Oracle>
+  select empno,ename,sal,deptno
+    from emp
+   where empno in (
+         select to_number(
+                    rtrim(
+                  substr(emps,
+                   instr(emps,',',1,iter.pos)+1,
+                   instr(emps,',',1,iter.pos+1)
+                   instr(emps,',',1,iter.pos)),',')) emps
+          from (select ','||'7654,7698,7782,7788'||',' emps from t1) csv,
+               (select rownum pos from emp) iter
+         where iter.pos <= ((length(csv.emps)-
+                   length(replace(csv.emps,',')))/length(','))-1
+ )
+
+<PostgreSQL>
+ select ename,sal,deptno
+    from emp
+   where empno in (
+  select cast(empno as integer) as empno
+    from (
+  select split_part(list.vals,',',iter.pos) as empno
+    from (select id as pos from t10) iter,
+         (select ','||'7654,7698,7782,7788'||',' as vals
+            from t1) list
+  where iter.pos <=
+        length(list.vals)-length(replace(list.vals,',',''))
+        ) z
+  where length(empno) > 0
+        )
+
+<SQL Server>
+ select empno,ename,sal,deptno
+   from emp
+  where empno in (select substring(c,2,charindex(',',c,2)-2) as empno
+    from (
+  select substring(csv.emps,iter.pos,len(csv.emps)) as c
+    from (select ','+'7654,7698,7782,7788'+',' as emps
+            from t1) csv,
+         (select id as pos
+           from t100) iter
+  where iter.pos <= len(csv.emps)
+       ) x
+  where len(c) > 1
+    and substring(c,1,1) = ','
+       )
+--------------------------------------------------------------------
+<Oracle>
+select emps,pos
+  from (select ','||'7654,7698,7782,7788'||',' emps
+          from t1) csv,
+       (select rownum pos from emp) iter
+ where iter.pos <=
+ ((length(csv.emps)-length(replace(csv.emps,',')))/length(','))-1
+--------------------------------------------------------------------
+select substr(emps,
+       instr(emps,',',1,iter.pos)+1,
+       instr(emps,',',1,iter.pos+1)
+       instr(emps,',',1,iter.pos)) emps
+  from (select ','||'7654,7698,7782,7788'||',' emps
+          from t1) csv,
+       (select rownum pos from emp) iter
+ where iter.pos <=
+  ((length(csv.emps)-length(replace(csv.emps,',')))/length(','))-1
+
+<PostgreSQL>
+select list.vals,
+       split_part(list.vals,',',iter.pos) as empno,
+       iter.pos
+  from (select id as pos from t10) iter,
+       (select ','||'7654,7698,7782,7788'||',' as vals
+          from t1) list
+ where iter.pos <=
+       length(list.vals)-length(replace(list.vals,',',''))
 
