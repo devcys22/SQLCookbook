@@ -569,3 +569,39 @@ select 'mo,larry,curly' as name
 select 'tina,gina,jaunita,regina,leena' as name
   from t1
 --------------------------------------------------------------------
+select iter.pos,src.name name1,
+         substring_index(src.name,',',iter.pos) name2,
+         substring_index(
+           substring_index(src.name,',',iter.pos),',',-1) name3
+  from (select id pos from t10) iter,
+       V src
+ where iter.pos <=
+         length(src.name)-length(replace(src.name,',',''))
+
+6.15 IP 주소 파싱하기
+<MySQL>
+ select substring_index(substring_index(y.ip,'.',1),'.',-1) a,
+        substring_index(substring_index(y.ip,'.',2),'.',-1) b,
+        substring_index(substring_index(y.ip,'.',3),'.',-1) c,
+        substring_index(substring_index(y.ip,'.',4),'.',-1) d
+   from (select '92.111.0.2' as ip from t1) y
+ 
+6.16. 소리로 문자열 비교하기
+ select an1.a_name as name1, an2.a_name as name2,
+ SOUNDEX(an1.a_name) as Soundex_Name
+ from author_names an1
+ join author_names an2
+ on (SOUNDEX(an1.a_name)=SOUNDEX(an2.a_name)
+ and an1.a_name not like an2.a_name)
+
+6.17 패턴과 일치하지 않는 텍스트 찾기
+select emp_id, text
+  from employee_comment
+--------------------------------------------------------------------
+select emp_id, text
+  from employee_comment
+ where regexp_like(text, '[0-9]{3}[-. ][0-9]{3}[-. ][0-9]{4}')
+   and regexp_like(
+         regexp_replace(text,
+            '[0-9]{3}([-. ])[0-9]{3}\1[0-9]{4}','***'),
+            '[0-9]{3}[-. ][0-9]{3}[-. ][0-9]{4}')
