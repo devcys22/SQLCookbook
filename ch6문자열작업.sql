@@ -494,3 +494,78 @@ select list.vals,
  where iter.pos <=
        length(list.vals)-length(replace(list.vals,',',''))
 
+6.12 문자열을 알파벳 순서로 정렬하기
+<MySQL>
+ select ename, group_concat(c order by c separator '')
+   from (
+ select ename, substr(a.ename,iter.pos,1) c
+   from emp a,
+        ( select id pos from t10 ) iter
+  where iter.pos <= length(a.ename)
+        ) x
+  group by ename
+  
+ 6.13 숫자로 취급할 수 있는 문자열 식별하기
+ drop view v;
+ 
+create view V as
+select concat(
+         substr(ename,1,2),
+         replace(cast(deptno as char(4)),' ',''),
+         substr(ename,3,2)
+       ) as mixed
+  from emp
+ where deptno = 10
+ union all
+select replace(cast(empno as char(4)), ' ', '')
+  from emp where deptno = 20
+ union all
+select ename from emp where deptno = 30
+--------------------------------------------------------------------
+  select cast(group_concat(c order by pos separator '') as unsigned)
+         as MIXED1
+    from (
+  select v.mixed, iter.pos, substr(v.mixed,iter.pos,1) as c
+    from V,
+         ( select id pos from t10 ) iter
+   where iter.pos <= length(v.mixed)
+     and ascii(substr(v.mixed,iter.pos,1)) between 48 and 57
+         ) y
+  group by mixed
+  order by 1
+  
+  <MySQL>
+select v.mixed, iter.pos, substr(v.mixed,iter.pos,1) as c
+  from V,
+      ( select id pos from t10 ) iter
+ where iter.pos <= length(v.mixed) 
+ order by 1,2
+--------------------------------------------------------------------
+select v.mixed, iter.pos, substr(v.mixed,iter.pos,1) as c
+   from V,
+       ( select id pos from t10 ) iter
+ where iter.pos <= length(v.mixed)
+  and ascii(substr(v.mixed,iter.pos,1)) between 48 and 57
+ order by 1,2
+--------------------------------------------------------------------
+select cast(group_concat(c order by pos separator '') as unsigned)
+         as MIXED1
+  from ( 
+select v.mixed, iter.pos, substr(v.mixed,iter.pos,1) as c 
+  from V, 
+      ( select id pos from t10 ) iter 
+ where iter.pos <= length(v.mixed) 
+  and ascii(substr(x.mixed,iter.pos,1)) between 48 and 57
+       ) y
+  group by mixed
+  order by 1
+  
+ 
+6.14 n번째로 구분된 부분 문자열 추출하기
+create view V as
+select 'mo,larry,curly' as name
+  from t1
+ union all
+select 'tina,gina,jaunita,regina,leena' as name
+  from t1
+--------------------------------------------------------------------
