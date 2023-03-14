@@ -82,3 +82,40 @@ select deptno, count(*), count(comm), count('hello')
 select count(*)
   from emp
  group by deptno
+ 
+7.5 열의 값 세어보기
+select count(comm)
+  from emp
+  
+7.6 누계 생성하기
+ select ename, sal,
+        sum(sal) over (order by sal,empno) as running_total
+   from emp
+   order by 2
+--------------------------------------------------------------------
+select empno, sal,
+       sum(sal)over(order by sal,empno) as running_total1,
+       sum(sal)over(order by sal) as running_total2
+  from emp
+ order by 2
+
+7.7 누적곱 생성하기
+ select empno,ename,sal,
+        exp(sum(ln(sal))over(order by sal,empno)) as running_prod
+   from emp
+  where deptno = 10
+
+7.8 일련의 값 평활화하기
+select date1, sales,lag(sales,1) over(order by date1) as salesLagOne,
+lag(sales,2) over(order by date1) as salesLagTwo,
+(sales
++ (lag(sales,1) over(order by date1))
++ lag(sales,2) over(order by date1))/3 as MovingAverage
+from sales
+
+select date1, sales,lag(sales,1) over(order by date1),
+lag(sales,2) over(order by date1),
+((3*sales)
++ (2*(lag(sales,1) over(order by date1)))
++ (lag(sales,2) over(order by date1)))/6 as SalesMA
+from sales
