@@ -166,3 +166,60 @@ union
 
         select avg(sal) as MedianSal
                from inter
+               
+7.11 총계에서의 백분율 알아내기
+<MySQL와 PostgreSQL>
+ select (sum(
+          case when deptno = 10 then sal end)/sum(sal)
+         )*100 as pct
+   from emp
+   
+ <MySQL와 PostgreSQL>
+select sum(case when deptno = 10 then sal end) as d10,
+       sum(sal)
+from emp
+--------------------------------------------------------------------
+select (cast(
+         sum(case when deptno = 10 then sal end)
+            as decimal)/sum(sal)
+        )*100 as pct
+  from emp
+
+7.12 Null 허용 열 집계하기
+ select avg(coalesce(comm,0)) as avg_comm
+   from emp
+  where deptno=30
+--------------------------------------------------------------------
+select avg(comm)
+  from emp
+ where deptno=30
+--------------------------------------------------------------------
+select ename, comm
+  from emp
+ where deptno=30
+order by comm desc
+
+7.13 최댓값과 최솟값을 배제한 평균 계산하기
+<MySQL과 PostgreSQL>
+ select avg(sal)
+   from emp
+  where sal not in (
+     (select min(sal) from emp),
+     (select max(sal) from emp)
+  )
+
+<DB2, Oracle, SQL Server>
+ select avg(sal)
+   from (
+ select sal, min(sal)over() min_sal, max(sal)over() max_sal
+   from emp
+        ) x
+  where sal not in (min_sal,max_sal)
+--------------------------------------------------------------------
+<MySQL과 PostgreSQL>
+select (sum(sal)-min(sal)-max(sal))/(count(*)-2)
+  from emp
+<DB2, Oracle, SQL Server>
+select sal, min(sal)over() min_sal, max(sal)over() max_sal
+  from emp
+
