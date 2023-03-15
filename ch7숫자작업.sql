@@ -119,3 +119,50 @@ lag(sales,2) over(order by date1),
 + (2*(lag(sales,1) over(order by date1)))
 + (lag(sales,2) over(order by date1)))/6 as SalesMA
 from sales
+
+7.9 최빈값 계산하기
+select sal
+  from emp
+ where deptno = 20
+ order by sal
+--------------------------------------------------------------------
+<DB2, MySQL, PostgreSQL, SQL Server>
+  select sal
+    from (
+  select sal,
+         dense_rank()over( order by cnt desc) as rnk
+    from (
+  select sal, count(*) as cnt
+    from emp
+   where deptno = 20
+  group by sal
+        ) x
+        ) y
+  where rnk = 1
+
+7.10 중앙값 계산하기
+select sal
+  from emp
+ where deptno = 20
+ order by sal
+
+
+<MySQL>
+with rank_tab (sal, rank_sal) as
+(
+select sal, cume_dist() over (order by sal)
+            from emp
+            where deptno=20
+),
+
+inter as
+(
+        select sal, rank_sal from rank_tab
+        where rank_sal>=0.5
+union
+        select sal, rank_sal from rank_tab
+        where rank_sal<=0.5
+)
+
+        select avg(sal) as MedianSal
+               from inter
