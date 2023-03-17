@@ -223,3 +223,35 @@ select (sum(sal)-min(sal)-max(sal))/(count(*)-2)
 select sal, min(sal)over() min_sal, max(sal)over() max_sal
   from emp
 
+7.15. 누계에서 값 변경하기
+create view V (id,amt,trx)
+as
+select 1, 100, 'PR' from t1 union all
+select 2, 100, 'PR' from t1 union all
+select 3, 50,  'PY' from t1 union all
+select 4, 100, 'PR' from t1 union all
+select 5, 200, 'PY' from t1 union all
+select 6, 50,  'PY' from t1
+--------------------------------------------------------------------
+  select * from V
+--------------------------------------------------------------------
+  select case when trx = 'PY'
+              then 'PAYMENT'
+              else 'PURCHASE'
+          end trx_type,
+          amt,
+          sum(
+           case when trx = 'PY'
+              then -amt else amt
+           end
+        ) over (order by id,amt) as balance
+ from V
+--------------------------------------------------------------------
+select case when trx = 'PY'
+            then 'PAYMENT'
+            else 'PURCHASE'
+       end trx_type,
+       case when trx = 'PY'
+            then -amt else amt
+       end as amt
+  from V
