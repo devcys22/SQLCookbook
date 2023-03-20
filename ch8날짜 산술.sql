@@ -234,3 +234,24 @@ select max(case when ename = 'BLAKE'
        ) x,
        t500
  where t500.id <= blake_hd-jones_hd+1
+ 
+ 8.4 두 날짜 사이의 월 또는 년 수 알아내기
+<DB2와 MySQL>
+ select mnth, mnth/12
+   from (
+ select (year(max_hd) - year(min_hd))*12 +
+        (month(max_hd) - month(min_hd)) as mnth
+   from (
+ select min(hiredate) as min_hd, max(hiredate) as max_hd
+   from emp
+        ) x
+        ) y
+        
+<Oracle>
+ select months_between(max_hd,min_hd),
+        months_between(max_hd,min_hd)/12
+   from (
+ select min(hiredate) min_hd, max(hiredate) max_hd
+   from emp
+        ) x
+
