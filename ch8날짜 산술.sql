@@ -255,3 +255,110 @@ select max(case when ename = 'BLAKE'
    from emp
         ) x
 
+8.5 두 날짜 사이의 시, 분, 초 알아내기
+<DB2>
+ select dy*24 hr, dy*24*60 min, dy*24*60*60 sec
+   from (
+  select ( days(max(case when ename = 'WARD'
+                    then hiredate
+               end)) -
+           days(max(case when ename = 'ALLEN'
+                    then hiredate
+               end))
+         ) as dy
+   from emp
+        ) x
+
+<MySQL>
+ select datediff(allen_hd,ward_hd)*24 hr,
+         datediff(allen_hd,ward_hd)*24*60 min,
+         datediff(allen_hd,ward_hd)*24*60*60 sec
+    from (
+  select max(case when ename = 'WARD'
+                   then hiredate
+             end) as ward_hd,
+         max(case when ename = 'ALLEN'
+                  then hiredate
+            end) as allen_hd
+   from emp
+        ) x
+
+<SQL Server>
+ select datediff(day,allen_hd,ward_hd,hour) as hr,
+         datediff(day,allen_hd,ward_hd,minute) as min,
+         datediff(day,allen_hd,ward_hd,second) as sec
+    from (
+  select max(case when ename = 'WARD'
+                   then hiredate
+             end) as ward_hd,
+         max(case when ename = 'ALLEN'
+                  then hiredate
+            end) as allen_hd
+   from emp
+        ) x
+
+<Oracle과 PostgreSQL>
+ select dy*24 as hr, dy*24*60 as min, dy*24*60*60 as sec
+    from (
+  select (max(case when ename = 'WARD'
+                  then hiredate
+             end) -
+         max(case when ename = 'ALLEN'
+                  then hiredate
+             end)) as dy
+    from emp
+        ) x
+--------------------------------------------------------------------
+select max(case when ename = 'WARD'
+                 then hiredate
+           end) as ward_hd,
+       max(case when ename = 'ALLEN'
+                then hiredate
+           end) as allen_hd
+  from emp
+
+8.6. 1년 중 평일 발생 횟수 계산하기
+
+<MySQL>
+select concat(year(current_date),'-01-01')
+  from t1
+--------------------------------------------------------------------
+select date_format(
+          date_add(
+              cast(
+            concat(year(current_date),'-01-01')
+                   as date),
+                   interval t500.id-1 day),
+                   '%W') day
+  from t500
+ where t500.id <= datediff(
+                         cast(
+                       concat(year(current_date)+1,'-01-01')
+                              as date),
+                         cast(
+                       concat(year(current_date),'-01-01')
+                             as date))
+--------------------------------------------------------------------
+select date_format(
+          date_add(
+              cast(
+            concat(year(current_date),'-01-01')
+                   as date),
+                   interval t500.id-1 day),
+                   '%W') day,
+       count(*)
+  from t500
+ where t500.id <= datediff(
+                         cast(
+                       concat(year(current_date)+1,'-01-01')
+                              as date),
+                         cast(
+                       concat(year(current_date),'-01-01')
+                              as date))
+ group by date_format(
+             date_add(
+                 cast(
+               concat(year(current_date),'-01-01')
+                      as date),
+                     interval t500.id-1 day),
+                     '%W')
