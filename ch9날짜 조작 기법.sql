@@ -165,3 +165,92 @@ from dual
   )
      select dy from cal
      where dayofweek(dy) = 6
+
+9.6 월의 특정 요일의 첫 번째 및 마지막 발생일 알아내기
+<Oracle>
+select next_day(trunc(sysdate,'mm')-1,'MONDAY') first_monday,
+       next_day(last_day(trunc(sysdate,'mm'))-7,'MONDAY') last_monday
+  from dual
+
+<MySQL>
+ select first_monday,
+         case month(adddate(first_monday,28))
+              when mth then adddate(first_monday,28)
+                       else adddate(first_monday,21)
+         end last_monday
+   from (
+  select case sign(dayofweek(dy)-2)
+              when 0 then dy
+              when -1 then adddate(dy,abs(dayofweek(dy)-2))
+             when 1 then adddate(dy,(7-(dayofweek(dy)-2)))
+        end first_monday,
+        mth
+   from (
+ select adddate(adddate(current_date,-day(current_date)),1) dy,
+        month(current_date) mth
+   from t1
+        ) x
+        ) y
+		
+9.7 달력 만들기
+<Oracle>
+  with x
+     as (
+  select *
+    from (
+  select to_char(trunc(sysdate,'mm')+level-1,'iw') wk,
+         to_char(trunc(sysdate,'mm')+level-1,'dd') dm,
+         to_number(to_char(trunc(sysdate,'mm')+level-1,'d')) dw,
+         to_char(trunc(sysdate,'mm')+level-1,'mm') curr_mth,
+         to_char(sysdate,'mm') mth
+   from dual
+  connect by level <= 31
+        )
+  where curr_mth = mth
+ )
+ select max(case dw when 2 then dm end) Mo,
+        max(case dw when 3 then dm end) Tu,
+        max(case dw when 4 then dm end) We,
+        max(case dw when 5 then dm end) Th,
+        max(case dw when 6 then dm end) Fr,
+        max(case dw when 7 then dm end) Sa,
+        max(case dw when 1 then dm end) Su
+   from x
+  group by wk
+  order by wk
+
+<MySQL>
+with recursive  x(dy,dm,mth,dw,wk)
+      as (
+  select dy,
+         day(dy) dm,
+         datepart(m,dy) mth,
+         datepart(dw,dy) dw,
+         case when datepart(dw,dy) = 1
+              then datepart(ww,dy)-1
+              else datepart(ww,dy)
+        end wk
+   from (
+ select date_add(day,-day(getdate())+1,getdate()) dy
+   from t1
+        ) x
+  union all
+  select dateadd(d,1,dy), day(date_add(d,1,dy)), mth,
+         datepart(dw,dateadd(d,1,dy)),
+         case when datepart(dw,date_add(d,1,dy)) = 1
+              then datepart(wk,date_add(d,1,dy))-1
+              else datepart(wk,date_add(d,1,dy))
+         end
+    from x
+   where datepart(m,date_add(d,1,dy)) = mth
+ )
+ select max(case dw when 2 then dm end) as Mo,
+        max(case dw when 3 then dm end) as Tu,
+        max(case dw when 4 then dm end) as We,
+        max(case dw when 5 then dm end) as Th,
+        max(case dw when 6 then dm end) as Fr,
+        max(case dw when 7 then dm end) as Sa,
+        max(case dw when 1 then dm end) as Su
+   from x
+  group by wk
+  order by wk;
