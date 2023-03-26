@@ -254,3 +254,30 @@ with recursive  x(dy,dm,mth,dw,wk)
    from x
   group by wk
   order by wk;
+
+9.8 해당 연도의 분기 시작일 및 종료일 나열하기
+<Oracle>
+ select rownum qtr,
+        add_months(trunc(sysdate,'y'),(rownum-1)*3) q_start,
+        add_months(trunc(sysdate,'y'),rownum*3)-1 q_end
+   from emp
+  where rownum <= 4
+
+<MySQL>
+	      with recursive x (dy,cnt)
+     as (
+	         select
+         adddate(current_date,(-dayofyear(current_date))+1) dy
+           ,id
+	     from t1
+	   union all
+	         select adddate(dy, interval 3 month ), cnt+1
+	         from x
+         where cnt+1 <= 4
+        )
+
+       select quarter(adddate(dy,-1)) QTR
+    ,  date_add(dy, interval -3 month) Q_start
+    ,  adddate(dy,-1)  Q_end
+     from x
+     order by 1;
