@@ -281,3 +281,124 @@ with recursive  x(dy,dm,mth,dw,wk)
     ,  adddate(dy,-1)  Q_end
      from x
      order by 1;
+
+9.9 지정 분기의 시작일 및 종료일 알아내기
+select 20051 as yrq from t1 union all
+select 20052 as yrq from t1 union all
+select 20053 as yrq from t1 union all
+select 20054 as yrq from t1
+		
+<Oracle>
+ select add_months(q_end,-2) q_start,
+         last_day(q_end) q_end
+    from (
+  select to_date(substr(yrq,1,4)||mod(yrq,10)*3,'yyyymm') q_end
+    from (
+  select 20051 yrq from dual union all
+  select 20052 yrq from dual union all
+  select 20053 yrq from dual union all
+  select 20054 yrq from dual
+        ) x
+        ) y
+		
+<MySQL>
+ select date_add(
+          adddate(q_end,-day(q_end)+1),
+                 interval -2 month) q_start,
+         q_end
+    from (
+  select last_day(
+      str_to_date(
+           concat(
+           substr(yrq,1,4),mod(yrq,10)*3),'%Y%m')) q_end
+   from (
+ select 20051 as yrq from t1 union all
+ select 20052 as yrq from t1 union all
+ select 20053 as yrq from t1 union all
+ select 20054 as yrq from t1
+        ) x
+        ) y
+	
+<Oracle>
+select substr(yrq,1,4) yr, mod(yrq,10)*3 mth
+  from (
+select 20051 yrq from t1 union all
+select 20052 yrq from t1 union all
+select 20053 yrq from t1 union all
+select 20054 yrq from t1
+       ) x
+----------------------------------------------------------------
+select to_date(substr(yrq,1,4)||mod(yrq,10)*3,'yyyymm') q_end
+  from (
+select 20051 yrq from t1 union all
+select 20052 yrq from t1 union all
+select 20053 yrq from t1 union all
+select 20054 yrq from t1
+       ) x
+
+<MySQL>
+select substr(cast(yrq as varchar),1,4) yr, mod(yrq,10)*3 mth
+  from (
+select 20051 yrq from t1 union all
+select 20052 yrq from t1 union all
+select 20053 yrq from t1 union all
+select 20054 yrq from t1
+       ) x
+--------------------------------------------------------------------
+select last_day(
+    str_to_date(
+         concat(
+         substr(yrq,1,4),mod(yrq,10)*3),'%Y%m')) q_end
+  from (
+select 20051 as yrq from t1 union all
+select 20052 as yrq from t1 union all
+select 20053 as yrq from t1 union all
+select 20054 as yrq from t1
+       ) x
+
+9.10 누락된 날짜 채우기
+select distinct
+       extract(year from hiredate) as year
+  from emp
+		
+<Oracle>
+   with x
+      as (
+  select add_months(start_date,level-1) start_date
+    from (
+  select min(trunc(hiredate,'y')) start_date,
+         add_months(max(trunc(hiredate,'y')),12) end_date
+    from emp
+         )
+   connect by level <= months_between(end_date,start_date)
+ )
+ select x.start_date MTH, count(e.hiredate) num_hired
+   from x left join emp e
+     on (x.start_date = trunc(e.hiredate,'mm'))
+  group by x.start_date
+  order by 1
+		
+<MySQL>
+with recursive x (start_date,end_date)
+     as
+    (
+      select
+          adddate(min(hiredate),
+          -dayofyear(min(hiredate))+1)  start_date
+          ,adddate(max(hiredate),
+          -dayofyear(max(hiredate))+1)  end_date
+          from emp
+       union all
+          select date_add(start_date,interval 1 month)
+          , end_date
+          from x
+          where date_add(start_date, interval 1 month) < end_date
+      )
+
+select x.start_date mth, count(e.hiredate) num_hired
+ from x left join emp e
+   on (extract(year_month from start_date)
+          =
+       extract(year_month from e.hiredate))
+group by x.start_date
+order by 1;
