@@ -402,3 +402,17 @@ select x.start_date mth, count(e.hiredate) num_hired
        extract(year_month from e.hiredate))
 group by x.start_date
 order by 1;
+
+9.11 특정 시간 단위 검색하기
+
+<DB2와 MySQL>
+ select ename
+   from emp
+ where monthname(hiredate) in ('February','December')
+    or dayname(hiredate) = 'Tuesday'
+
+<Oracle과 PostgreSQL>
+ select ename
+   from emp
+ where rtrim(to_char(hiredate,'month')) in ('february','december')
+    or rtrim(to_char(hiredate,'day')) = 'tuesday'
