@@ -438,3 +438,28 @@ order by 1;
         date_format(b.hiredate,'%w%M')
     and a.empno < b.empno
  order by a.ename
+		
+9.13 중복 날짜 범위 식별하기
+
+<DB2, PostgreSQL, Oracle>
+ select a.empno,a.ename,
+        'project '||b.proj_id||
+        ' overlaps project '||a.proj_id as msg
+   from emp_project a,
+        emp_project b
+  where a.empno = b.empno
+    and b.proj_start >= a.proj_start
+    and b.proj_start <= a.proj_end
+    and a.proj_id != b.proj_id
+
+<MySQL>
+ select a.empno,a.ename,
+        concat('project ',b.proj_id,
+         ' overlaps project ',a.proj_id) as msg
+   from emp_project a,
+        emp_project b
+  where a.empno = b.empno
+    and b.proj_start >= a.proj_start
+    and b.proj_start <= a.proj_end
+    and a.proj_id != b.proj_id
+
