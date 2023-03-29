@@ -416,3 +416,25 @@ order by 1;
    from emp
  where rtrim(to_char(hiredate,'month')) in ('february','december')
     or rtrim(to_char(hiredate,'day')) = 'tuesday'
+
+9.12 날짜의 특정 부분으로 레코드 비교하기
+
+<Oracle과 PostgreSQL>
+ select a.ename ||
+        ' was hired on the same month and weekday as '||
+        b.ename as msg
+   from emp a, emp b
+ where to_char(a.hiredate,'DMON') =
+       to_char(b.hiredate,'DMON')
+   and a.empno < b.empno
+ order by a.ename
+
+<MySQL>
+ select concat(a.ename,
+        ' was hired on the same month and weekday as ',
+        b.ename) msg
+   from emp a, emp b
+  where date_format(a.hiredate,'%w%M') =
+        date_format(b.hiredate,'%w%M')
+    and a.empno < b.empno
+ order by a.ename
