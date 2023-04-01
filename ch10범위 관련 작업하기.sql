@@ -42,3 +42,26 @@ where proj_id <= 5
       )
 where proj_end = next_start
    or proj_start = last_end
+
+10.2 같은 그룹 또는 파티션의 행 간 차이 찾기
+  with next_sal_tab (deptno,ename,sal,hiredate,next_sal)
+  as
+  (select deptno, ename, sal, hiredate,
+        lead(sal)over(partition by deptno
+                          order by hiredate) as next_sal
+   from emp )
+
+     select deptno, ename, sal, hiredate
+  ,    coalesce(cast(sal-next_sal as char), 'N/A') as diff
+    from next_sal_tab
+--------------------------------------------------------------------
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno order by hiredate) as next_sal
+  from emp
+--------------------------------------------------------------------
+select deptno,ename,sal,hiredate, sal-next_sal diff
+  from (
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno order by hiredate) next_sal
+  from emp
+       )
