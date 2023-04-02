@@ -65,3 +65,20 @@ select deptno,ename,sal,hiredate,
        lead(sal)over(partition by deptno order by hiredate) next_sal
   from emp
        )
+select deptno,ename,sal,hiredate,
+       nvl(to_char(sal-next_sal),'N/A') diff
+  from (
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno order by hiredate) next_sal
+  from emp
+       )
+--------------------------------------------------------------------
+select deptno,ename,sal,hiredate,
+       lpad(nvl(to_char(sal-next_sal),'N/A'),10) diff
+  from (
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno
+                         order by hiredate) next_sal
+  from emp
+ where deptno=10 and empno > 10
+       )
