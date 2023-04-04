@@ -82,3 +82,25 @@ select deptno,ename,sal,hiredate,
   from emp
  where deptno=10 and empno > 10
        )
+--------------------------------------------------------------------
+insert into emp (empno,ename,deptno,sal,hiredate)
+values (1,'ant',10,1000,to_date('17-NOV-2006'))
+
+insert into emp (empno,ename,deptno,sal,hiredate)
+values (2,'joe',10,1500,to_date('17-NOV-2006'))
+
+insert into emp (empno,ename,deptno,sal,hiredate)
+values (3,'jim',10,1600,to_date('17-NOV-2006'))
+
+insert into emp (empno,ename,deptno,sal,hiredate)
+values (4,'jon',10,1700,to_date('17-NOV-2006'))
+
+select deptno,ename,sal,hiredate,
+       lpad(nvl(to_char(sal-next_sal),'N/A'),10) diff
+  from (
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno
+                         order by hiredate) next_sal
+  from emp
+ where deptno=10
+       )
