@@ -104,3 +104,72 @@ select deptno,ename,sal,hiredate,
   from emp
  where deptno=10
        )
+ --------------------------------------------------------------------
+select deptno,ename,sal,hiredate,
+       lpad(nvl(to_char(sal-next_sal),'N/A'),10) diff
+  from (
+select deptno,ename,sal,hiredate,
+       lead(sal,cnt-rn+1)over(partition by deptno
+                         order by hiredate) next_sal
+  from (
+select deptno,ename,sal,hiredate,
+       count(*)over(partition by deptno,hiredate) cnt,
+       row_number()over(partition by deptno,hiredate order by sal) rn
+  from emp
+ where deptno=10
+       )
+       )
+ select deptno,ename,sal,hiredate,
+       count(*)over(partition by deptno,hiredate) cnt,
+       row_number()over(partition by deptno,hiredate order by sal) rn
+  from emp
+ where deptno=10
+--------------------------------------------------------------------
+select deptno,ename,sal,hiredate,
+       lead(sal)over(partition by deptno
+                         order by hiredate) incorrect,
+       cnt-rn+1 distance,
+       lead(sal,cnt-rn+1)over(partition by deptno
+                         order by hiredate) correct
+  from (
+select deptno,ename,sal,hiredate,
+       count(*)over(partition by deptno,hiredate) cnt,
+       row_number()over(partition by deptno,hiredate
+                            order by sal) rn
+  from emp
+ where deptno=10
+       )
+
+10.3 연속 값 범위의 시작과 끝 찾기
+select *
+  from V
+--------------------------------------------------------------------
+ select proj_grp, min(proj_start), max(proj_end)
+    from (
+  select proj_id,proj_start,proj_end,
+         sum(flag)over(order by proj_id) proj_grp
+    from (
+  select proj_id,proj_start,proj_end,
+         case when
+              lag(proj_end)over(order by proj_id) = proj_start
+              then 0 else 1
+        end flag
+   from V
+        ) alias1
+        ) alias2
+  group by proj_grp
+
+select proj_id,proj_start,proj_end,
+      lag(proj_end)over(order by proj_id) prior_proj_end
+  from V
+--------------------------------------------------------------------
+select proj_id,proj_start,proj_end,
+       sum(flag)over(order by proj_id) proj_grp
+  from (
+select proj_id,proj_start,proj_end,
+       case when
+            lag(proj_end)over(order by proj_id) = proj_start
+            then 0 else 1
+       end flag
+  from V
+       )
