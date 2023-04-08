@@ -173,3 +173,66 @@ select proj_id,proj_start,proj_end,
        end flag
   from V
        )
+       
+ 10.4 값 범위에서 누락된 값 채우기
+<Oracle>
+ select x.yr, coalesce(cnt,0) cnt
+    from (
+  select extract(year from min(hiredate)over()) -
+         mod(extract(year from min(hiredate)over()),10) +
+         rownum-1 yr
+    from emp
+   where rownum <= 10
+         ) x
+    left join
+        (
+ select to_number(to_char(hiredate,'YYYY')) yr, count(*) cnt
+   from emp
+  group by to_number(to_char(hiredate,'YYYY'))
+        ) y
+     on ( x.yr = y.yr )
+
+<PostgreSQL과 MySQL>
+ select y.yr, coalesce(x.cnt,0) as cnt
+    from (
+  select min_year-mod(cast(min_year as int),10)+rn as yr
+    from (
+  select (select min(extract(year from hiredate))
+            from emp) as min_year,
+         id-1 as rn
+    from t10
+         ) a
+        ) x
+   left join
+        (
+ select extract(year from hiredate) as yr, count(*) as cnt
+   from emp
+  group by extract(year from hiredate)
+        ) y
+     on ( y.yr = x.yr )
+     
+10.5 연속된 숫자 값 생성하기
+<DB2와 SQL Server>
+ with x (id)
+  as (
+  select 1
+   union all
+  select id+1
+    from x
+   where id+1 <= 10
+  )
+  select * from x
+
+<Oracle>
+ select array id
+   from dual
+  model
+    dimension by (0 idx)
+    measures(1 array)
+    rules iterate (10) (
+      array[iteration_number] = iteration_number+1
+    )
+
+<PostgreSQL>
+ select id
+   from generate_series (1, 10) x(id)
