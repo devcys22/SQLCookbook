@@ -99,3 +99,53 @@ select ename, sal,
        dense_rank() over (order by sal desc) dr
   from emp
   
+11.7 이후 행 조사하기
+  select ename, sal, hiredate
+    from (
+  select ename, sal, hiredate,
+         lead(sal)over(order by hiredate) next_sal
+    from emp
+         ) alias
+   where sal < next_sal
+--------------------------------------------------------------------
+select ename, sal, hiredate,
+       lead(sal)over(order by hiredate) next_sal
+  from emp
+--------------------------------------------------------------------
+select ename, sal, hiredate
+  from (
+select ename, sal, hiredate,
+       lead(sal,cnt-rn+1)over(order by hiredate) next_sal
+  from (
+select ename,sal,hiredate,
+       count(*)over(partition by hiredate) cnt,
+       row_number()over(partition by hiredate order by empno) rn
+  from emp
+       )
+       )
+ where sal < next_sal
+
+11.8 행 값 이동하기
+  select ename,sal,
+         coalesce(lead(sal)over(order by sal),min(sal)over()) forward,
+         coalesce(lag(sal)over(order by sal),max(sal)over()) rewind
+    from emp
+--------------------------------------------------------------------
+select ename,sal,
+       lead(sal)over(order by sal) forward,
+       lag(sal)over(order by sal) rewind
+  from emp
+--------------------------------------------------------------------
+select ename,sal,
+       coalesce(lead(sal)over(order by sal),min(sal)over()) forward,
+       coalesce(lag(sal)over(order by sal),max(sal)over()) rewind
+  from emp
+--------------------------------------------------------------------
+select ename,sal,
+       lead(sal,3)over(order by sal) forward,
+       lag(sal,5)over(order by sal) rewind
+  from emp
+
+11.9 순위 결과
+ select dense_rank() over(order by sal) rnk, sal
+   from emp
