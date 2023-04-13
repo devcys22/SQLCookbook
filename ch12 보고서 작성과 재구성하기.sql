@@ -50,3 +50,13 @@ select deptno, count(*) as empcount
    from emp
         ) x
   group by rn
+
+12.3 결과셋 역피벗하기
+select dept.deptno,
+      case dept.deptno 
+      	   when 10 then emp_cnts.deptno_10
+           when 20 then emp_cnts.deptno_20
+           when 30 then emp_cnts.deptno_30
+      end as counts_by_dept
+  from emp_cnts cross join
+       (select deptno fro dept where deptno <= 30) dept
