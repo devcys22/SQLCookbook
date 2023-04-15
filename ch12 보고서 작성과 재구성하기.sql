@@ -60,3 +60,34 @@ select dept.deptno,
       end as counts_by_dept
   from emp_cnts cross join
        (select deptno fro dept where deptno <= 30) dept
+
+12.4 결과셋을 한 열을 역피벗하기
+with four_rows(id)
+ as
+(
+ select 1
+    union all
+ select id+1
+   from four_rows
+  where id < 4
+ )
+ ,
+ x.tab(ename, job_sal,rn)
+   as
+ (
+  select e.ename, e.job, e.sal,
+    row_number()over(partition by e.empno
+    order by e.empno)
+    from emp e 
+    join four_rows on 1=1
+  )
+  
+ select
+   case rn
+   when 1 then ename
+   when 2 then job
+   when 3 then case(sal as char(4))
+  end emps
+ from x_tab
+ )
+)
