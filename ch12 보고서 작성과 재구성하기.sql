@@ -117,3 +117,64 @@ select to_number(
                  deptno,null,deptno)
         ) deptno, ename
   from emp
+
+12.6 행 간 계산하는 결과셋 피벗하기
+select deptno, sum(sal) as sal
+  from emp
+ group by deptno
+--------------------------------------------------------------------
+ select d20_sal - d10_sal as d20_10_diff,
+        d20_sal - d30_sal as d20_30_diff
+   from (
+ select sum(case when deptno=10 then sal end) as d10_sal,
+        sum(case when deptno=20 then sal end) as d20_sal,
+        sum(case when deptno=30 then sal end) as d30_sal
+   from emp
+        ) totals_by_dept
+--------------------------------------------------------------------
+with totals_by_dept (d10_sal, d20_sal, d30_sal)
+as
+(select
+          sum(case when deptno=10 then sal end) as d10_sal,
+          sum(case when deptno=20 then sal end) as d20_sal,
+          sum(case when deptno=30 then sal end) as d30_sal
+
+from emp)
+
+select   d20_sal - d10_sal as d20_10_diff,
+         d20_sal - d30_sal as d20_30_diff
+  from   totals_by_dept
+--------------------------------------------------------------------
+select case when deptno=10 then sal end as d10_sal,
+       case when deptno=20 then sal end as d20_sal,
+       case when deptno=30 then sal end as d30_sal
+  from emp
+--------------------------------------------------------------------
+select sum(case when deptno=10 then sal end) as d10_sal,
+       sum(case when deptno=20 then sal end) as d20_sal,
+       sum(case when deptno=30 then sal end) as d30_sal
+  from emp
+
+12.7 고정 크기의 데이터 버킷 생성하기
+ select ceil(row_number()over(order by empno)/5.0) grp,
+        empno,
+        ename
+   from emp
+--------------------------------------------------------------------
+select row_number()over(order by empno) rn,
+       empno,
+       ename
+  from emp
+--------------------------------------------------------------------
+select row_number()over(order by empno) rn,
+       row_number()over(order by empno)/5.0 division,
+       ceil(row_number()over(order by empno)/5.0) grp,
+       empno,
+       ename
+  from emp
+
+12.8. 사전 정의된 수의 버킷 생성하기
+ select ntile(4)over(order by empno) grp,
+        empno,
+        ename
+   from emp
