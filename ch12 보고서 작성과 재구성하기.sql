@@ -91,3 +91,29 @@ with four_rows(id)
  from x_tab
  )
 )
+
+12.5 결과셋에서 반복값 숨기기
+   select
+           case when
+              lag(deptno)over(order by deptno) = deptno then null
+              else deptno end DEPTNO
+       , ename
+    from emp
+Oracle 
+ select to_number(
+           decode(lag(deptno)over(order by deptno),
+                 deptno,null,deptno)
+        ) deptno, ename
+   from emp
+--------------------------------------------------------------------
+select lag(deptno)over(order by deptno) lag_deptno,
+       deptno,
+       ename
+  from emp
+--------------------------------------------------------------------
+select to_number(
+           CASE WHEN (lag(deptno)over(order by deptno)
+= deptno THEN null else deptno END deptno,
+                 deptno,null,deptno)
+        ) deptno, ename
+  from emp
