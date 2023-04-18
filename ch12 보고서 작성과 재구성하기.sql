@@ -178,3 +178,11 @@ select row_number()over(order by empno) rn,
         empno,
         ename
    from emp
+
+12.9. 수평 히스토그램 생성하기
+
+<Oracle, PostgreSQL, MySQL>
+ select deptno,
+        lpad('*',count(*),'*') as cnt
+   from emp
+  group by deptno
