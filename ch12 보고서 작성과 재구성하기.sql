@@ -219,3 +219,58 @@ select row_number()over(partition by deptno order by empno) rn,
        ) x
  group by rn
  order by 1 desc, 2 desc, 3 desc
+
+12.11. 비 GROUP BY 열 반환하기
+select ename,max(sal)
+  from empgroup by ename
+--------------------------------------------------------------------
+ select deptno,ename,job,sal,
+         case when sal = max_by_dept
+              then 'TOP SAL IN DEPT'
+              when sal = min_by_dept
+              then 'LOW SAL IN DEPT'
+         end dept_status,
+         case when sal = max_by_job
+              then 'TOP SAL IN JOB'
+              when sal = min_by_job
+             then 'LOW SAL IN JOB'
+        end job_status
+   from (
+ select deptno,ename,job,sal,
+        max(sal)over(partition by deptno) max_by_dept,
+        max(sal)over(partition by job)   max_by_job,
+        min(sal)over(partition by deptno) min_by_dept,
+        min(sal)over(partition by job)   min_by_job
+   from emp
+        ) emp_sals
+  where sal in (max_by_dept,max_by_job,
+                min_by_dept,min_by_job)
+--------------------------------------------------------------------
+select deptno,ename,job,sal,
+       max(sal)over(partition by deptno) maxDEPT,
+       max(sal)over(partition by job) maxJOB,
+       min(sal)over(partition by deptno) minDEPT,
+       min(sal)over(partition by job) minJOB
+  from emp
+--------------------------------------------------------------------
+select deptno,ename,job,sal,
+       case when sal = max_by_dept
+            then 'TOP SAL IN DEPT'
+            when sal = min_by_dept
+            then 'LOW SAL IN DEPT'
+       end dept_status,
+       case when sal = max_by_job
+            then 'TOP SAL IN JOB'
+            when sal = min_by_job
+            then 'LOW SAL IN JOB'
+       end job_status
+  from (
+select deptno,ename,job,sal,
+       max(sal)over(partition by deptno) max_by_dept,
+       max(sal)over(partition by job) max_by_job,
+       min(sal)over(partition by deptno) min_by_dept,
+       min(sal)over(partition by job) min_by_job
+  from emp
+       ) x
+ where sal in (max_by_dept,max_by_job,
+               min_by_dept,min_by_job)
