@@ -274,3 +274,54 @@ select deptno,ename,job,sal,
        ) x
  where sal in (max_by_dept,max_by_job,
                min_by_dept,min_by_job)
+12.12 단순 소계 계산하기
+<DB2와 Oracle>
+ select case grouping(job)
+             when 0 then job
+             else 'TOTAL'
+        end job,
+        sum(sal) sal
+   from emp
+  group by rollup(job)
+
+<SQL Server와 MySQL>
+ select coalesce(job,'TOTAL') job,
+        sum(sal) sal
+   from emp
+  group by job with rollup
+
+<PostgreSQL>
+select coalesce(job,'TOTAL') job,
+        sum(sal) sal
+   from emp
+  group by rollup(job)
+
+<DB2와 Oracle>
+select job, sum(sal) sal
+  from emp
+ group by job
+--------------------------------------------------------------------
+select job, sum(sal) sal
+  from emp
+ group by rollup(job)
+--------------------------------------------------------------------
+select case grouping(job)
+            when 0 then job
+            else 'TOTAL'
+       end job,
+       sum(sal) sal
+  from emp
+ group by rollup(job)
+<SQL Server와 MySQL>
+select job, sum(sal) sal
+  from emp
+ group by job
+--------------------------------------------------------------------
+select job, sum(sal) sal
+  from emp
+ group by job with rollup
+--------------------------------------------------------------------
+select coalesce(job,'TOTAL') job,
+       sum(sal) sal
+  from emp
+ group by job with rollup
