@@ -325,3 +325,78 @@ select coalesce(job,'TOTAL') job,
        sum(sal) sal
   from emp
  group by job with rollup
+
+12.13 가능한 모든 식 조합의 소계 계산하기
+<DB2>
+ select deptno,
+         job,
+         case cast(grouping(deptno) as char(1))||
+              cast(grouping(job) as char(1))
+              when '00' then 'TOTAL BY DEPT AND JOB'
+              when '10' then 'TOTAL BY JOB'
+              when '01' then 'TOTAL BY DEPT'
+              when '11' then 'TOTAL FOR TABLE'
+         end category,
+        sum(sal)
+   from emp
+  group by cube(deptno,job)
+  order by grouping(job),grouping(deptno)
+Oracle
+ select deptno,
+         job,
+         case grouping(deptno)||grouping(job)
+              when '00' then 'TOTAL BY DEPT AND JOB'
+              when '10' then 'TOTAL BY JOB'
+              when '01' then 'TOTAL BY DEPT'
+              when '11' then 'GRAND TOTALFOR TABLE'
+         end category,
+         sum(sal) sal
+   from emp
+  group by cube(deptno,job)
+  order by grouping(job),grouping(deptno)
+
+<SQL Server>
+ select deptno,
+         job,
+         case cast(grouping(deptno)as char(1))+
+              cast(grouping(job)as char(1))
+              when '00' then 'TOTAL BY DEPT AND JOB'
+              when '10' then 'TOTAL BY JOB'
+              when '01' then 'TOTAL BY DEPT'
+              when '11' then 'GRAND TOTAL FOR TABLE'
+         end category,
+        sum(sal) sal
+   from emp
+  group by deptno,job with cube
+  order by grouping(job),grouping(deptno)
+<PostgreSQL>
+select deptno,job
+,case concat(
+cast (grouping(deptno) as char(1)),cast (grouping(job) as char(1))
+  )
+  when '00' then 'TOTAL BY DEPT AND JOB'
+               when '10' then 'TOTAL BY JOB'
+               when '01' then 'TOTAL BY DEPT'
+               when '11' then 'GRAND TOTAL FOR TABLE'
+          end category
+  , sum(sal) as sal
+    from emp
+    group by cube(deptno,job)
+
+<MySQL>
+ select deptno, job,
+         'TOTAL BY DEPT AND JOB' as category,
+         sum(sal) as sal
+    from emp
+   group by deptno, job
+   union all
+  select null, job, 'TOTAL BY JOB', sum(sal)
+    from emp
+   group by job
+  union all
+ select deptno, null, 'TOTAL BY DEPT', sum(sal)
+   from emp
+  group by deptno
+  union all
+ select null,null,'GRAND TOTAL FOR TABLE', sum(sal)
+  from emp
