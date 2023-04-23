@@ -400,3 +400,16 @@ cast (grouping(deptno) as char(1)),cast (grouping(job) as char(1))
   union all
  select null,null,'GRAND TOTAL FOR TABLE', sum(sal)
   from emp
+  
+12.14 소계가 아닌 행 식별하기
+ select deptno, jo) sal,
+         grouping(deptno) deptno_subtotals,
+         grouping(job) job_subtotals
+    from emp
+   group by cube(deptno,job)
+--------------------------------------------------------------------
+  select deptno, job, sum(sal) sal,
+         grouping(deptno) deptno_subtotals,
+         grouping(job) job_subtotals
+    from emp
+   group by deptno,job with cube
