@@ -413,3 +413,44 @@ cast (grouping(deptno) as char(1)),cast (grouping(job) as char(1))
          grouping(job) job_subtotals
     from emp
    group by deptno,job with cube
+   
+12.15 Case 표현식으로 행 플래그 지정하기
+ select ename,
+         case when job = 'CLERK'
+              then 1 else 0
+         end as is_clerk,
+         case when job = 'SALESMAN'
+              then 1 else 0
+         end as is_sales,
+         case when job = 'MANAGER'
+              then 1 else 0
+        end as is_mgr,
+        case when job = 'ANALYST'
+             then 1 else 0
+        end as is_analyst,
+        case when job = 'PRESIDENT'
+             then 1 else 0
+        end as is_prez
+   from emp
+  order by 2,3,4,5,6
+--------------------------------------------------------------------
+select ename,
+       job,
+       case when job = 'CLERK'
+            then 1 else 0
+       end as is_clerk,
+       case when job = 'SALESMAN'
+            then 1 else 0
+       end as is_sales,
+       case when job = 'MANAGER'
+            then 1 else 0
+       end as is_mgr,
+       case when job = 'ANALYST'
+           then 1 else 0
+       end as is_analyst,
+       case when job = 'PRESIDENT'
+           then 1 else 0
+       end as is_prez
+  from emp
+ order by 2
+
