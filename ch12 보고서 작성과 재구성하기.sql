@@ -454,3 +454,28 @@ select ename,
   from emp
  order by 2
 
+12.16 희소행렬 만들기
+ select case deptno when 10 then ename end as d10,
+         case deptno when 20 then ename end as d20,
+         case deptno when 30 then ename end as d30,
+         case job when 'CLERK' then ename end as clerks,
+         case job when 'MANAGER' then ename end as mgrs,
+         case job when 'PRESIDENT' then ename end as prez,
+         case job when 'ANALYST' then ename end as anals,
+         case job when 'SALESMAN' then ename end as sales
+    from emp
+--------------------------------------------------------------------
+select max(case deptno when 10 then ename end) d10,
+       max(case deptno when 20 then ename end) d20,
+       max(case deptno when 30 then ename end) d30,
+       max(case job when 'CLERK' then ename end) clerks,
+       max(case job when 'MANAGER' then ename end) mgrs,
+       max(case job when 'PRESIDENT' then ename end) prez, 
+       max(case job when 'ANALYST' then ename end) anals, 
+       max(case job when 'SALESMAN' then ename end) sales
+  from ( 
+select deptno, job, ename,
+       row_number()over(partition by deptno order by empno) rn 
+  from emp 
+       ) x 
+ group by rn
