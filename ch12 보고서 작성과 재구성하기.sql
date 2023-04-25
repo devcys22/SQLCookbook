@@ -479,3 +479,53 @@ select deptno, job, ename,
   from emp 
        ) x 
  group by rn
+ 
+ 12.17 시간 단위로 행 그룹화하기
+select trx_id,
+       trx_date,
+       trx_cnt
+from trx_log
+--------------------------------------------------------------------
+ select ceil(trx_id/5.0) as grp,
+         min(trx_date)    as trx_start,
+         max(trx_date)    as trx_end,
+         sum(trx_cnt)     as total
+    from trx_log
+  group by ceil(trx_id/5.0)
+--------------------------------------------------------------------
+select trx_id,
+       trx_date,
+       trx_cnt,
+       trx_id/5.0 as val,
+       ceil(trx_id/5.0) as grp
+from trx_log
+--------------------------------------------------------------------
+select ceil(trx_id/5.0) as grp,
+       min(trx_date) as trx_start,
+       max(trx_date) as trx_end,
+       sum(trx_cnt) as total
+  from trx_log
+ group by ceil(trx_id/5.0)
+--------------------------------------------------------------------
+select trx_date,trx_cnt,
+       to_number(to_char(trx_date,'hh24')) hr,
+       ceil(to_number(to_char(trx_date-1/24/60/60,'miss'))/5.0) grp
+  from trx_log
+--------------------------------------------------------------------
+select hr,grp,sum(trx_cnt) total
+  from (
+select trx_date,trx_cnt,
+       to_number(to_char(trx_date,'hh24')) hr,
+       ceil(to_number(to_char(trx_date-1/24/60/60,'miss'))/5.0) grp
+  from trx_log
+       ) x
+ group by hr,grp
+--------------------------------------------------------------------
+select trx_id, trx_date, trx_cnt,
+       sum(trx_cnt)over(partition by ceil(trx_id/5.0)
+                        order by trx_date
+                        range between unbounded preceding
+                          and current row) runing_total,
+       sum(trx_cnt)over(partition by ceil(trx_id/5.0)) total,
+       case when mod(trx_id,5.0) = 0 then 'X' end grp_end
+  from trx_log
