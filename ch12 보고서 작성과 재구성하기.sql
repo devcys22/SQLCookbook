@@ -529,3 +529,12 @@ select trx_id, trx_date, trx_cnt,
        sum(trx_cnt)over(partition by ceil(trx_id/5.0)) total,
        case when mod(trx_id,5.0) = 0 then 'X' end grp_end
   from trx_log
+
+12.18 여러 그룹/파티션 집계를 동시 수행하기
+select ename,
+       deptno,
+       count(*)over(partition by deptno) deptno_cnt,
+       job,
+       count(*)over(partition by job) job_cnt,
+       count(*)over() total
+  from emp
