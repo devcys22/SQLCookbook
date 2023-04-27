@@ -538,3 +538,69 @@ select ename,
        count(*)over(partition by job) job_cnt,
        count(*)over() total
   from emp
+
+12.19 값의 이동 범위에 대한 집계 수행하기
+<DB2>
+    select hiredate,
+           sal,
+           sum(sal)over(order by days(hiredate)
+                          range between 90 preceding
+                             and current row) spending_pattern
+      from emp e
+
+<Oracle>
+    select hiredate,
+           sal,
+           sum(sal)over(order by hiredate
+                           range between 90 preceding
+                             and current row) spending_pattern
+      from emp e
+
+<MySQL>
+  select hiredate,
+          sal,
+          sum(sal)over(order by hiredate
+              range interval 90 day preceding ) spending_pattern
+  from emp e
+
+<PostgreSQL과 SQL Server>
+ select e.hiredate,
+         e.sal,
+         (select sum(sal) from emp d
+           whered.hiredate between e.hiredate-90
+                               and e.hiredate) as spending_pattern
+    from emp e
+   order by 1
+
+12.20 소계를 사용한 결과셋 피벗하기
+<DB2와 Oracle>
+ select mgr,
+         sum(case deptno when 10 then sal else 0 end) dept10,
+         sum(case deptno when 20 then sal else 0 end) dept20,
+         sum(case deptno when 30 then sal else 0 end) dept30,
+         sum(case flag when '11' then sal else null end) total
+    from (
+  select deptno,mgr,sum(sal) sal,
+         cast(grouping(deptno) as char(1))||
+         cast(grouping(mgr) as char(1)) flag
+   from emp
+  where mgr is not null
+  group by rollup(deptno,mgr)
+        ) x
+  group by mgr
+
+<MySQL>
+    select mgr,
+          sum(case deptno when 10 then sal else 0 end) dept10,
+          sum(case deptno when 20 then sal else 0 end) dept20,
+          sum(case deptno when 30 then sal else 0 end) dept30,
+          sum(case flag when '11' then sal else null end) total
+     from (
+    select  deptno,mgr,sum(sal) sal,
+            concat( cast(grouping(deptno) as char(1)) ,
+            cast(grouping(mgr) as char(1))) flag
+   from emp
+  where mgr is not null
+   group by deptno,mgr with rollup
+         ) x
+   group by mgr;
