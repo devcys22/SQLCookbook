@@ -154,3 +154,53 @@ select lpad('.',2*level,'.')||ename emp_tree
    from emp
   start with mgr is null
 connect by prior empno = mgr
+
+13.4 지정한 상위 행에 대한 모든 하위 행 찾기
+<DB2, PostgreSQL, SQL Server>
+   with x (ename,empno)
+      as (
+  select ename,empno
+    from emp
+   where ename = 'JONES'
+   union all
+  select e.ename, e.empno
+    from emp e, x
+   where x.empno = e.mgr
+ )
+ select ename
+   from x
+
+<Oracle>
+ select ename
+   from emp
+  start with ename = 'JONES'
+ connect by prior empno = mgr
+
+13.5 리프, 분기, 루트 노드 행 확인하기
+<DB2, PostgreSQL, MySQL, SQL Server>
+  select e.ename,
+         (select sign(count(*)) from emp d
+           where 0 =
+             (select count(*) from emp f
+               where f.mgr = e.empno)) as is_leaf,
+         (select sign(count(*)) from emp d
+           where d.mgr = e.empno
+            and e.mgr is not null) as is_branch,
+         (select sign(count(*)) from emp d
+          where d.empno = e.empno
+            and d.mgr is null) as is_root
+   from emp e
+ order by 4 desc,3 desc
+
+<Oracle>
+   select ename,
+          connect_by_isleaf is_leaf,
+          (select count(*) from emp e
+            where e.mgr = emp.empno
+              and emp.mgr is not null
+              and rownum = 1) is_branch,
+          decode(ename,connect_by_root(ename),1,0) is_root
+     from emp
+    start with mgr is null
+ connect by prior empno = mgr
+ order by 4 desc, 3 desc
