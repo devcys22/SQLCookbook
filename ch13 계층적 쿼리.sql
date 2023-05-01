@@ -102,3 +102,55 @@ connect by prior mgr = empno
    from emp
   start with ename = 'MILLER'
 connect by prior mgr = empno
+
+13.3 테이블의 계층 뷰 생성하기
+
+<MySQL>
+   with recursive x (ename,empno)
+       as (
+   select cast(ename as varchar(100)),empno
+     from emp
+   where mgr is null
+    union all
+   select cast(concat(x.ename,' - ',e.ename) as varchar(100)),
+          e.empno
+     from emp e, x
+   where e.mgr = x.empno
+  )
+  select ename as emp_tree
+    from x
+   order by 1
+
+<Oracle>
+  select ltrim(
+           sys_connect_by_path(ename,' - '),
+         ' - ') emp_tree
+   from emp
+    start with mgr is null
+  connect by prior empno=mgr
+    order by 1
+
+<DB2, MySQL, PostgreSQL, SQL Server>
+with x (ename,empno)
+    as (
+select cast(ename as varchar(100)),empno
+  from emp
+ where mgr is null
+ union all
+select cast(e.ename as varchar(100)),e.empno
+  from emp e, x
+ where e.mgr = x.empno
+ )
+ select ename emp_tree
+   from x
+
+<Oracle>
+select ename emp_tree
+  from emp
+ start with mgr is null
+connect by prior empno = mgr
+--------------------------------------------------------------------
+select lpad('.',2*level,'.')||ename emp_tree
+   from emp
+  start with mgr is null
+connect by prior empno = mgr
